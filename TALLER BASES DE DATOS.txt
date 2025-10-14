@@ -1,0 +1,153 @@
+-- CREACIÓN DE BASE DE DATOS
+DROP DATABASE IF EXISTS UniversidadDB;
+CREATE DATABASE UniversidadDB;
+USE UniversidadDB;
+
+-- TABLAS PRINCIPALES
+CREATE TABLE ESTUDIANTES (
+    id_est INT PRIMARY KEY,
+    nombre VARCHAR(80),
+    carrera VARCHAR(50),
+    semestre INT,
+    email VARCHAR(100)
+);
+
+CREATE TABLE CURSOS (
+    id_cur INT PRIMARY KEY,
+    nombre_curso VARCHAR(100),
+    creditos INT,
+    profesor VARCHAR(100)
+);
+
+CREATE TABLE MATRICULAS (
+    id_est INT,
+    id_cur INT,
+    nota_final DECIMAL(3,1),
+    PRIMARY KEY (id_est, id_cur),
+    FOREIGN KEY (id_est) REFERENCES ESTUDIANTES(id_est),
+    FOREIGN KEY (id_cur) REFERENCES CURSOS(id_cur)
+);
+
+-- INSERCIÓN DE DATOS
+INSERT INTO ESTUDIANTES VALUES
+(1, 'Ana Torres', 'Ingenieria', 3, 'ana@mail.com'),
+(2, 'Luis Perez', 'Administracion', 2, 'luis@mail.com'),
+(3, 'Maria Gomez', 'Derecho', 5, 'maria@mail.com'),
+(4, 'Diego Suarez', 'Ingenieria', 3, NULL);
+
+INSERT INTO CURSOS VALUES
+(101, 'Bases de Datos', 4, 'Ramirez'),
+(102, 'Contabilidad', 3, 'Suarez'),
+(103, 'Derecho Penal', 4, 'Martinez'),
+(104, 'Algoritmos', 3, 'Lopez');
+
+INSERT INTO MATRICULAS VALUES
+(1, 101, 4.5),
+(2, 102, 3.8),
+(3, 103, 4.2),
+(1, 103, 3.9),
+(2, 101, 4.0),
+(4, 104, 4.7);
+
+-- BLOQUE 1: CONSULTAS DE REFUERZO
+-- a) Estudiantes de Ingeniería con nota > 4.0
+SELECT DISTINCT E.nombre
+FROM ESTUDIANTES E
+JOIN MATRICULAS M ON E.id_est = M.id_est
+WHERE E.carrera = 'Ingenieria' AND M.nota_final > 4.0;
+
+-- b) Cursos con créditos >= 4 que no tienen matrículas
+SELECT C.nombre_curso
+FROM CURSOS C
+WHERE C.creditos >= 4
+AND C.id_cur NOT IN (SELECT id_cur FROM MATRICULAS);
+
+-- BLOQUE 2: CONSULTAS DML
+-- a) Cursos con promedio de notas > 4.0
+SELECT C.nombre_curso, AVG(M.nota_final) AS promedio
+FROM CURSOS C
+JOIN MATRICULAS M ON C.id_cur = M.id_cur
+GROUP BY C.nombre_curso
+HAVING promedio > 4.0;
+
+-- b) Estudiantes sin email
+SELECT * FROM ESTUDIANTES WHERE email IS NULL;
+
+-- c) Unión de ids de cursos matriculados y no matriculados
+SELECT id_cur FROM MATRICULAS
+UNION
+SELECT id_cur FROM CURSOS;
+
+-- BLOQUE 2.2: ACTUALIZACIONES
+INSERT INTO ESTUDIANTES VALUES (5, 'Juan Lopez', 'Ingenieria', 4, NULL);
+
+UPDATE MATRICULAS
+SET nota_final = 4.9
+WHERE id_est = 1 AND id_cur = 101;
+
+DELETE FROM MATRICULAS WHERE id_est = 4;
+
+TRUNCATE TABLE MATRICULAS;
+
+INSERT INTO MATRICULAS VALUES
+(1, 101, 4.5),
+(2, 102, 3.8),
+(3, 103, 4.2),
+(1, 103, 3.9),
+(2, 101, 4.0),
+(4, 104, 4.7);
+
+-- BLOQUE 3: DDL
+ALTER TABLE ESTUDIANTES ADD telefono VARCHAR(20);
+ALTER TABLE CURSOS MODIFY profesor VARCHAR(150);
+ALTER TABLE ESTUDIANTES DROP COLUMN telefono;
+ALTER TABLE ESTUDIANTES ADD CONSTRAINT UQ_email UNIQUE (email);
+
+-- BLOQUE 4: JOIN Y SUBCONSULTAS
+SELECT E.nombre, C.nombre_curso, M.nota_final
+FROM ESTUDIANTES E
+JOIN MATRICULAS M ON E.id_est = M.id_est
+JOIN CURSOS C ON M.id_cur = C.id_cur;
+
+SELECT E.nombre, M.nota_final
+FROM ESTUDIANTES E
+LEFT JOIN MATRICULAS M ON E.id_est = M.id_est;
+
+SELECT E.nombre, M.nota_final
+FROM ESTUDIANTES E
+JOIN MATRICULAS M ON E.id_est = M.id_est
+WHERE M.nota_final > (SELECT AVG(nota_final) FROM MATRICULAS);
+
+SELECT nombre_curso
+FROM CURSOS C
+WHERE NOT EXISTS (
+    SELECT 1 FROM MATRICULAS M WHERE M.id_cur = C.id_cur
+);
+
+-- BLOQUE 5: VISTAS E ÍNDICES
+CREATE VIEW v_promedios AS
+SELECT id_cur, AVG(nota_final) AS promedio
+FROM MATRICULAS
+GROUP BY id_cur;
+
+CREATE INDEX idx_matriculas_idest ON MATRICULAS(id_est);
+
+EXPLAIN SELECT * FROM MATRICULAS WHERE id_est = 1;
+
+-- BLOQUE 6: TRANSACCIONES Y PERMISOS
+START TRANSACTION;
+UPDATE MATRICULAS SET nota_final = 5.0 WHERE id_est = 1;
+INSERT INTO MATRICULAS VALUES (5, 101, 4.2);
+ROLLBACK;
+
+START TRANSACTION;
+UPDATE MATRICULAS SET nota_final = 4.8 WHERE id_est = 2;
+SAVEPOINT sp1;
+INSERT INTO MATRICULAS VALUES (5, 102, 4.3);
+ROLLBACK TO sp1;
+COMMIT;
+
+-- DCL (Requiere usuario con permisos)
+CREATE USER IF NOT EXISTS 'estudiante'@'localhost' IDENTIFIED BY 'pass';
+GRANT SELECT, INSERT ON UniversidadDB.ESTUDIANTES TO 'estudiante'@'localhost';
+REVOKE INSERT ON UniversidadDB.ESTUDIANTES FROM 'estudiante'@'localhost';
