@@ -1,0 +1,15 @@
+Pregunta: La elección de la herramienta de desarrollo impacta la seguridad en dispositivos IoT.
+¿Cuál de las siguientes opciones destaca una característica de Visual Studio Code que contribuye a un desarrollo seguro?
+
+a. JavaScript: Lenguaje de programación comúnmente utilizado en entornos IoT.
+
+b. PlatformIO IDE: Herramienta de desarrollo que no admite lenguajes de programación específicos.
+
+c. Arduino IDE: Plataforma de código abierto para la creación de dispositivos electrónicos.
+
+d. Visual Studio Code: Entorno de desarrollo integrado de Microsoft para diversos lenguajes.
+
+Respuesta correcta: d.
+Visual Studio Code es el entorno de desarrollo integrado (IDE) de Microsoft que admite diversos lenguajes
+de programación, ofrece extensiones de seguridad, análisis estático de código y compatibilidad con
+herramientas como PlatformIO para el desarrollo seguro de dispositivos IoT.
